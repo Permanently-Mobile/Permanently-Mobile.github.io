@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PM Trade Module -- Automated Perpetual Futures Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── RESET ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  /* ── NOISE TEXTURE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+  }
+
+  /* ── BASE ── */
+  body {
+    background: #080c14;
+    color: #c8d2e0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── AMBIENT BACKGROUND EFFECTS ── */
+  .bg-grid {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+  }
+
+  .bg-glow-1 {
+    position: fixed;
+    top: -200px; left: -200px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+    animation: drift1 25s ease-in-out infinite;
+  }
+  .bg-glow-2 {
+    position: fixed;
+    bottom: -300px; right: -200px;
+    width: 800px; height: 800px;
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.08) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+    animation: drift2 30s ease-in-out infinite;
+  }
+
+  @keyframes drift1 {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(80px, 60px); }
+  }
+  @keyframes drift2 {
+    0%, 100% { transform: translate(0, 0); }
+    50% { transform: translate(-60px, -80px); }
+  }
+
+  /* ── SCROLL ANIMATION ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+  .reveal-delay-5 { transition-delay: 0.5s; }
+
+  /* ── TYPOGRAPHY ── */
+  h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+  code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ── COLOR SYSTEM ── */
+  :root {
+    --blue-50: #eff6ff;
+    --blue-100: #dbeafe;
+    --blue-200: #93c5fd;
+    --blue-300: #60a5fa;
+    --blue-400: #3b82f6;
+    --blue-500: #2563eb;
+    --blue-600: #1d4ed8;
+    --blue-700: #1e40af;
+    --blue-900: #1e3a5f;
+    --cyan: #06b6d4;
+    --dark-50: #c8d2e0;
+    --dark-100: #94a3b8;
+    --dark-200: #64748b;
+    --dark-300: #475569;
+    --dark-400: #334155;
+    --dark-500: #1e293b;
+    --dark-600: #162033;
+    --dark-700: #0f172a;
+    --dark-800: #0b1120;
+    --dark-900: #080c14;
+    --signal-green: #22c55e;
+    --signal-red: #ef4444;
+    --signal-yellow: #f59e0b;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, var(--blue-300), var(--blue-400), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; width: 100%;
+    z-index: 100;
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(8, 12, 20, 0.75);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.08);
+    transition: background 0.3s;
+  }
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    text-decoration: none;
+  }
+  .nav-logo .apex { color: #fff; }
+  .nav-logo .trader { background: linear-gradient(135deg, var(--blue-300), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .nav-logo .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue-400); margin-left: 2px; animation: pulse-dot 2s ease-in-out infinite; }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--blue-400); }
+    50% { opacity: 0.4; box-shadow: 0 0 8px var(--blue-400); }
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--dark-200);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    transition: color 0.2s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 0;
+    width: 0; height: 2px;
+    background: var(--blue-400);
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .nav-links a:hover { color: #fff; }
+  .nav-links a:hover::after { width: 100%; }
+
+  .nav-cta {
+    padding: 8px 22px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    color: #fff;
+    background: linear-gradient(135deg, var(--blue-500), var(--blue-600));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.25s;
+    letter-spacing: 0.3px;
+  }
+  .nav-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 24px rgba(37, 99, 235, 0.35);
+    border-color: var(--blue-400);
+  }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .nav-inner { padding: 14px 20px; }
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    z-index: 1;
+    padding: 160px 32px 100px;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 18px;
+    border-radius: 999px;
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    background: rgba(59, 130, 246, 0.06);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    color: var(--blue-300);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    animation: badge-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+  }
+  .hero-badge .separator { opacity: 0.3; }
+
+  @keyframes badge-in {
+    from { opacity: 0; transform: translateY(10px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .hero h1 {
+    font-size: clamp(38px, 6vw, 72px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    color: #fff;
+    margin-bottom: 24px;
+    animation: heading-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+  }
+  .hero h1 .line2 {
+    display: block;
+    background: linear-gradient(135deg, var(--blue-200), var(--blue-400), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  @keyframes heading-in {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-sub {
+    max-width: 620px;
+    margin: 0 auto 40px;
+    font-size: 18px;
+    color: var(--dark-100);
+    line-height: 1.7;
+    animation: sub-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+  }
+
+  @keyframes sub-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 64px;
+    animation: actions-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+  }
+
+  @keyframes actions-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 36px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--blue-500), var(--blue-600));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.2);
+  }
+  .btn-primary:hover::before { left: 100%; }
+
+  .btn-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 36px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--blue-300);
+    background: transparent;
+    border: 1px solid var(--dark-400);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-decoration: none;
+  }
+  .btn-outline:hover {
+    border-color: var(--blue-400);
+    background: rgba(59, 130, 246, 0.06);
+    color: #fff;
+    box-shadow: 0 0 24px rgba(59, 130, 246, 0.1);
+  }
+
+  /* ── TERMINAL ── */
+  .terminal-wrap {
+    max-width: 680px;
+    margin: 0 auto;
+    position: relative;
+    animation: terminal-in 1s cubic-bezier(0.16, 1, 0.3, 1) 0.8s both;
+  }
+  .terminal-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(6, 182, 212, 0.15), rgba(59, 130, 246, 0.1));
+    z-index: -1;
+  }
+  .terminal-wrap::after {
+    content: '';
+    position: absolute;
+    inset: -40px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(37, 99, 235, 0.1), transparent 60%);
+    z-index: -2;
+    filter: blur(20px);
+  }
+
+  @keyframes terminal-in {
+    from { opacity: 0; transform: translateY(40px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .terminal {
+    background: rgba(11, 17, 32, 0.9);
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    border-radius: 12px;
+    overflow: hidden;
+    text-align: left;
+    backdrop-filter: blur(8px);
+  }
+  .terminal-header {
+    background: rgba(15, 23, 42, 0.8);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.08);
+  }
+  .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--dark-200);
+    margin-left: 8px;
+  }
+  .terminal-body {
+    padding: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--dark-200);
+  }
+  .terminal-body .cmd { color: var(--blue-300); }
+  .terminal-body .comment { color: var(--dark-300); }
+  .terminal-body .output { color: var(--dark-100); }
+  .terminal-body .signal { color: var(--signal-green); }
+  .terminal-body .warn { color: var(--signal-yellow); }
+  .terminal-body .line { margin-top: 2px; }
+  .terminal-body .gap { margin-top: 10px; }
+
+  /* ── STATS TICKER ── */
+  .stats-bar {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid rgba(59, 130, 246, 0.08);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.08);
+    background: rgba(15, 23, 42, 0.4);
+    padding: 48px 32px;
+  }
+  .stats-grid {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    text-align: center;
+  }
+  .stat-number {
+    font-family: 'Outfit', sans-serif;
+    font-size: 48px;
+    font-weight: 900;
+    letter-spacing: -2px;
+    line-height: 1;
+    color: #fff;
+  }
+  .stat-number.accent { background: linear-gradient(135deg, var(--blue-300), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .stat-label {
+    margin-top: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--dark-200);
+    letter-spacing: 0.5px;
+  }
+
+  @media (max-width: 640px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+  }
+
+  /* ── SECTION HEADERS ── */
+  .section-header {
+    text-align: center;
+    margin-bottom: 64px;
+  }
+  .section-header h2 {
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+  }
+  .section-header p {
+    font-size: 18px;
+    color: var(--dark-100);
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  .section-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--blue-400);
+    margin-bottom: 16px;
+    position: relative;
+    padding-left: 24px;
+  }
+  .section-tag::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 50%;
+    width: 14px; height: 2px;
+    background: var(--blue-400);
+    transform: translateY(-50%);
+  }
+
+  /* ── FEATURES (Asymmetric Bento Grid) ── */
+  .features {
+    position: relative;
+    z-index: 1;
+    padding: 100px 32px;
+  }
+  .bento-grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: minmax(180px, auto);
+    gap: 16px;
+  }
+  .bento-card {
+    position: relative;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(59, 130, 246, 0.08);
+    border-radius: 16px;
+    padding: 32px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .bento-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .bento-card:hover {
+    border-color: rgba(59, 130, 246, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.08);
+  }
+  .bento-card:hover::before { opacity: 1; }
+
+  .bento-card .icon-wrap {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    margin-bottom: 16px;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .bento-card:hover .icon-wrap {
+    background: rgba(59, 130, 246, 0.14);
+    border-color: rgba(59, 130, 246, 0.25);
+  }
+  .bento-card h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 8px;
+  }
+  .bento-card p {
+    font-size: 14px;
+    color: var(--dark-100);
+    line-height: 1.7;
+  }
+
+  /* Bento layout positions */
+  .bento-1 { grid-column: span 5; grid-row: span 1; }
+  .bento-2 { grid-column: span 4; grid-row: span 1; }
+  .bento-3 { grid-column: span 3; grid-row: span 2; }
+  .bento-4 { grid-column: span 4; grid-row: span 1; }
+  .bento-5 { grid-column: span 5; grid-row: span 1; }
+  .bento-6 { grid-column: span 7; grid-row: span 1; }
+  .bento-7 { grid-column: span 5; grid-row: span 1; }
+  .bento-8 { grid-column: span 6; grid-row: span 1; }
+  .bento-9 { grid-column: span 6; grid-row: span 1; }
+
+  /* Highlight card */
+  .bento-card.highlight {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(6, 182, 212, 0.05));
+    border-color: rgba(59, 130, 246, 0.15);
+  }
+  .bento-card.highlight::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08), transparent 70%);
+    pointer-events: none;
+  }
+
+  @media (max-width: 900px) {
+    .bento-grid { grid-template-columns: 1fr; }
+    .bento-1, .bento-2, .bento-3, .bento-4, .bento-5,
+    .bento-6, .bento-7, .bento-8, .bento-9 {
+      grid-column: span 1; grid-row: span 1;
+    }
+  }
+
+  /* ── EXCHANGES ── */
+  .exchanges {
+    position: relative;
+    z-index: 1;
+    padding: 100px 32px;
+    border-top: 1px solid rgba(59, 130, 246, 0.06);
+  }
+  .exchange-row {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+  }
+  .exchange-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 152px;
+    padding: 28px 16px;
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(59, 130, 246, 0.06);
+    border-radius: 14px;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .exchange-card:hover {
+    border-color: rgba(59, 130, 246, 0.2);
+    transform: translateY(-4px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+  }
+  .exchange-icon {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    color: var(--blue-300);
+    letter-spacing: 0.5px;
+    transition: all 0.3s;
+  }
+  .exchange-card:hover .exchange-icon {
+    background: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.25);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+  }
+  .exchange-card .ex-name {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: #fff;
+  }
+  .exchange-card .ex-detail {
+    font-size: 12px;
+    color: var(--dark-200);
+  }
+
+  /* ── HOW IT WORKS (Diagonal step layout) ── */
+  .how-it-works {
+    position: relative;
+    z-index: 1;
+    padding: 100px 32px;
+    border-top: 1px solid rgba(59, 130, 246, 0.06);
+  }
+  .steps-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  .step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+    margin-bottom: 48px;
+    position: relative;
+  }
+  .step-row:nth-child(2) { margin-left: 60px; }
+  .step-row:nth-child(3) { margin-left: 120px; }
+
+  @media (max-width: 768px) {
+    .step-row:nth-child(2), .step-row:nth-child(3) { margin-left: 0; }
+  }
+
+  .step-number {
+    flex-shrink: 0;
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--blue-300);
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    position: relative;
+  }
+  .step-number::after {
+    content: '';
+    position: absolute;
+    top: 60px; left: 50%;
+    width: 1px; height: 48px;
+    background: linear-gradient(to bottom, rgba(59, 130, 246, 0.15), transparent);
+  }
+  .step-row:last-child .step-number::after { display: none; }
+
+  .step-content h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  .step-content p {
+    font-size: 15px;
+    color: var(--dark-100);
+    line-height: 1.7;
+    max-width: 520px;
+  }
+  .step-content code {
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--blue-300);
+    padding: 2px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  /* ── PRICING ── */
+  .pricing {
+    position: relative;
+    z-index: 1;
+    padding: 100px 32px;
+    border-top: 1px solid rgba(59, 130, 246, 0.06);
+  }
+  .pricing-grid {
+    max-width: 820px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 700px) {
+    .pricing-grid { grid-template-columns: 1fr; max-width: 420px; }
+  }
+
+  .price-card {
+    position: relative;
+    background: rgba(15, 23, 42, 0.5);
+    border: 1px solid rgba(59, 130, 246, 0.08);
+    border-radius: 18px;
+    padding: 40px 32px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .price-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3);
+  }
+
+  .price-card.featured {
+    border-color: rgba(59, 130, 246, 0.25);
+    background: linear-gradient(160deg, rgba(37, 99, 235, 0.1), rgba(6, 182, 212, 0.04) 60%, rgba(15, 23, 42, 0.5));
+  }
+  .price-card.featured::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--blue-400), var(--cyan));
+  }
+  .price-card.featured::after {
+    content: '';
+    position: absolute;
+    top: -100px; right: -100px;
+    width: 250px; height: 250px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08), transparent 60%);
+    pointer-events: none;
+  }
+
+  .badge-popular {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: rgba(37, 99, 235, 0.15);
+    color: var(--blue-300);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .price-tier {
+    font-family: 'Outfit', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .price-desc {
+    font-size: 14px;
+    color: var(--dark-200);
+    margin-bottom: 24px;
+  }
+  .price-amount {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 32px;
+  }
+  .price-amount .dollar {
+    font-family: 'Outfit', sans-serif;
+    font-size: 52px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  .price-amount .period {
+    font-size: 14px;
+    color: var(--dark-200);
+  }
+
+  .price-features {
+    list-style: none;
+    margin-bottom: 32px;
+  }
+  .price-features li {
+    padding: 8px 0;
+    font-size: 14px;
+    color: var(--dark-100);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .price-features li .ck {
+    color: var(--blue-400);
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .price-features li strong { color: #fff; }
+
+  .price-card .btn-primary,
+  .price-card .btn-outline { width: 100%; justify-content: center; font-size: 14px; }
+
+  .pricing-note {
+    text-align: center;
+    margin-top: 28px;
+    font-size: 13px;
+    color: var(--dark-200);
+  }
+
+  /* ── FAQ ── */
+  .faq-section {
+    position: relative;
+    z-index: 1;
+    padding: 100px 32px;
+    border-top: 1px solid rgba(59, 130, 246, 0.06);
+  }
+  .faq-list {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+  .faq-item {
+    border-bottom: 1px solid rgba(59, 130, 246, 0.06);
+  }
+  .faq-q {
+    cursor: pointer;
+    padding: 22px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: #fff;
+    transition: color 0.2s;
+    user-select: none;
+  }
+  .faq-q:hover { color: var(--blue-300); }
+  .faq-arrow {
+    color: var(--dark-300);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s;
+    font-size: 12px;
+  }
+  .faq-item.open .faq-arrow {
+    transform: rotate(180deg);
+    color: var(--blue-400);
+  }
+  .faq-a {
+    padding: 0 0 22px;
+    font-size: 15px;
+    color: var(--dark-100);
+    line-height: 1.8;
+    display: none;
+    max-width: 600px;
+  }
+  .faq-item.open .faq-a { display: block; animation: faq-open 0.3s ease; }
+  .faq-a code {
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--blue-300);
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  @keyframes faq-open {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid rgba(59, 130, 246, 0.06);
+    padding: 48px 32px;
+  }
+  .footer-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .footer-brand {
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+    text-decoration: none;
+  }
+  .footer-brand .ft { background: linear-gradient(135deg, var(--blue-300), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .footer-company {
+    font-size: 13px;
+    color: var(--dark-200);
+  }
+  .footer-company strong { color: #fff; font-weight: 600; }
+  .footer-disclaimer {
+    font-size: 11px;
+    color: var(--dark-300);
+  }
+
+  /* ── CANDLESTICK DECORATION (Hero background) ── */
+  .candle-bg {
+    position: absolute;
+    top: 60px; left: 0; right: 0;
+    height: 500px;
+    z-index: -1;
+    overflow: hidden;
+    opacity: 0.04;
+    pointer-events: none;
+  }
+  .candle-bg svg { width: 100%; height: 100%; }
+
+  /* ── LIVE TICKER BAR ── */
+  .ticker-strip {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    padding: 10px 0;
+    background: rgba(11, 17, 32, 0.6);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.06);
+  }
+  .ticker-track {
+    display: flex;
+    gap: 48px;
+    animation: ticker-scroll 30s linear infinite;
+    width: max-content;
+  }
+  .ticker-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--dark-200);
+  }
+  .ticker-item .pair { color: var(--dark-50); font-weight: 600; }
+  .ticker-item .up { color: var(--signal-green); }
+  .ticker-item .down { color: var(--signal-red); }
+
+  @keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- Ambient effects -->
+<div class="bg-grid"></div>
+<div class="bg-glow-1"></div>
+<div class="bg-glow-2"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- NAV -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <span class="apex">PM</span>
+      <span class="trader">Trade</span>
+      <span class="dot"></span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#exchanges">Exchanges</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a href="#pricing" class="nav-cta">Get Started</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- DECORATIVE TICKER -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<div class="ticker-strip" style="margin-top: 64px;">
+  <div class="ticker-track">
+    <span class="ticker-item"><span class="pair">BTC-USDT</span> $67,241.50 <span class="up">+2.34%</span></span>
+    <span class="ticker-item"><span class="pair">ETH-USDT</span> $3,512.80 <span class="up">+1.82%</span></span>
+    <span class="ticker-item"><span class="pair">SOL-USDT</span> $178.45 <span class="down">-0.67%</span></span>
+    <span class="ticker-item"><span class="pair">DOGE-USDT</span> $0.1423 <span class="up">+5.21%</span></span>
+    <span class="ticker-item"><span class="pair">ARB-USDT</span> $1.87 <span class="up">+3.14%</span></span>
+    <span class="ticker-item"><span class="pair">AVAX-USDT</span> $38.90 <span class="down">-1.05%</span></span>
+    <span class="ticker-item"><span class="pair">LINK-USDT</span> $18.32 <span class="up">+0.91%</span></span>
+    <span class="ticker-item"><span class="pair">OP-USDT</span> $3.67 <span class="up">+4.55%</span></span>
+    <!-- duplicate for seamless loop -->
+    <span class="ticker-item"><span class="pair">BTC-USDT</span> $67,241.50 <span class="up">+2.34%</span></span>
+    <span class="ticker-item"><span class="pair">ETH-USDT</span> $3,512.80 <span class="up">+1.82%</span></span>
+    <span class="ticker-item"><span class="pair">SOL-USDT</span> $178.45 <span class="down">-0.67%</span></span>
+    <span class="ticker-item"><span class="pair">DOGE-USDT</span> $0.1423 <span class="up">+5.21%</span></span>
+    <span class="ticker-item"><span class="pair">ARB-USDT</span> $1.87 <span class="up">+3.14%</span></span>
+    <span class="ticker-item"><span class="pair">AVAX-USDT</span> $38.90 <span class="down">-1.05%</span></span>
+    <span class="ticker-item"><span class="pair">LINK-USDT</span> $18.32 <span class="up">+0.91%</span></span>
+    <span class="ticker-item"><span class="pair">OP-USDT</span> $3.67 <span class="up">+4.55%</span></span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- HERO -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <!-- Faint candlestick SVG pattern in background -->
+  <div class="candle-bg">
+    <svg viewBox="0 0 1200 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="100" y1="50" x2="100" y2="350" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="88" y="120" width="24" height="140" fill="#22c55e" rx="2"/>
+      <line x1="200" y1="80" x2="200" y2="320" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="188" y="100" width="24" height="100" fill="#ef4444" rx="2"/>
+      <line x1="300" y1="30" x2="300" y2="380" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="288" y="90" width="24" height="200" fill="#22c55e" rx="2"/>
+      <line x1="400" y1="60" x2="400" y2="340" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="388" y="140" width="24" height="120" fill="#ef4444" rx="2"/>
+      <line x1="500" y1="40" x2="500" y2="360" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="488" y="80" width="24" height="160" fill="#22c55e" rx="2"/>
+      <line x1="600" y1="70" x2="600" y2="300" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="588" y="110" width="24" height="100" fill="#22c55e" rx="2"/>
+      <line x1="700" y1="90" x2="700" y2="350" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="688" y="150" width="24" height="130" fill="#ef4444" rx="2"/>
+      <line x1="800" y1="20" x2="800" y2="370" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="788" y="60" width="24" height="220" fill="#22c55e" rx="2"/>
+      <line x1="900" y1="50" x2="900" y2="340" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="888" y="130" width="24" height="100" fill="#ef4444" rx="2"/>
+      <line x1="1000" y1="40" x2="1000" y2="310" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="988" y="70" width="24" height="150" fill="#22c55e" rx="2"/>
+      <line x1="1100" y1="80" x2="1100" y2="360" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect x="1088" y="120" width="24" height="140" fill="#22c55e" rx="2"/>
+    </svg>
+  </div>
+
+  <div style="max-width: 800px; margin: 0 auto;">
+    <div class="hero-badge">
+      SELF-HOSTED <span class="separator">/</span> YOUR KEYS <span class="separator">/</span> YOUR MACHINE
+    </div>
+    <h1>
+      Trade perpetual futures
+      <span class="line2">on autopilot.</span>
+    </h1>
+    <p class="hero-sub">
+      PM Trade Module runs on your hardware, trades with your exchange credentials, and executes your strategy. No cloud. No data sharing. No middleman.
+    </p>
+    <div class="hero-actions">
+      <a href="#pricing" class="btn-primary">Start Trading</a>
+      <a href="#demo" class="btn-outline">See It Running</a>
+    </div>
+
+    <!-- Terminal demo -->
+    <div id="demo" class="terminal-wrap">
+      <div class="terminal">
+        <div class="terminal-header">
+          <div class="terminal-dot" style="background:#f87171"></div>
+          <div class="terminal-dot" style="background:#fbbf24"></div>
+          <div class="terminal-dot" style="background:#4ade80"></div>
+          <span class="terminal-title">pm-trade-module</span>
+        </div>
+        <div class="terminal-body">
+          <div><span class="cmd">$</span> <span class="output">node setup-wizard.mjs</span></div>
+          <div class="comment"># Interactive setup -- pick exchange, strategy, pairs</div>
+          <div class="gap"><span class="cmd">$</span> <span class="output">node pm-trade-module.mjs</span></div>
+          <div class="line"><span class="output">[14:32:01] Engine started: reversal_180</span></div>
+          <div class="line"><span class="output">[14:32:01] Watching: BTC-USDT (1H), ETH-USDT (1H), SOL-USDT (15m)</span></div>
+          <div class="line"><span class="output">[14:32:02] Exchange: Blofin (demo) -- connected</span></div>
+          <div class="line"><span class="output">[14:32:02] Status page: http://localhost:3200</span></div>
+          <div class="gap"><span class="signal">[14:45:00] SIGNAL: BTC-USDT LONG @ $67,240 (reversal_180)</span></div>
+          <div class="line"><span class="signal">[14:45:01] ORDER FILLED: BTC-USDT LONG 0.015 @ $67,241</span></div>
+          <div class="line"><span class="warn">[14:45:01] SL: $65,224 | Trail: 0.5% (activates at +2.5%)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- STATS BAR -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section class="stats-bar">
+  <div class="stats-grid">
+    <div class="reveal">
+      <div class="stat-number accent">5</div>
+      <div class="stat-label">Exchanges</div>
+    </div>
+    <div class="reveal reveal-delay-1">
+      <div class="stat-number">4</div>
+      <div class="stat-label">Strategy Engines</div>
+    </div>
+    <div class="reveal reveal-delay-2">
+      <div class="stat-number">7</div>
+      <div class="stat-label">Timeframes</div>
+    </div>
+    <div class="reveal reveal-delay-3">
+      <div class="stat-number accent">0%</div>
+      <div class="stat-label">Monthly Fees</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- FEATURES -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section id="features" class="features">
+  <div class="section-header reveal">
+    <span class="section-tag">Capabilities</span>
+    <h2>Everything you need.<br>Nothing you don't.</h2>
+    <p>No subscriptions. No cloud lock-in. One payment, full ownership.</p>
+  </div>
+
+  <div class="bento-grid">
+    <div class="bento-card bento-1 highlight reveal">
+      <div class="icon-wrap">&#x1f512;</div>
+      <h3>Self-Hosted</h3>
+      <p>Runs on your machine. API keys never leave your hardware. No cloud servers, no data sharing, no third-party access.</p>
+    </div>
+    <div class="bento-card bento-2 reveal reveal-delay-1">
+      <div class="icon-wrap">&#x26a1;</div>
+      <h3>Real-Time Status Page</h3>
+      <p>Built-in WebSocket dashboard. Watch positions, P&L, signals, and activity in real time from any browser on your network.</p>
+    </div>
+    <div class="bento-card bento-3 reveal reveal-delay-2">
+      <div class="icon-wrap">&#x1f6e1;</div>
+      <h3>Risk Management</h3>
+      <p>Hard leverage caps, daily drawdown limits, stop losses, trailing stops, and max position controls. All configurable per-pair.</p>
+    </div>
+    <div class="bento-card bento-4 reveal reveal-delay-1">
+      <div class="icon-wrap">&#x1f9ea;</div>
+      <h3>Demo Mode</h3>
+      <p>Every exchange supports sandbox/testnet. Test your strategy risk-free before committing real capital. Flip one config flag to go live.</p>
+    </div>
+    <div class="bento-card bento-5 reveal reveal-delay-2">
+      <div class="icon-wrap">&#x1f4ca;</div>
+      <h3>Backtesting Engine</h3>
+      <p>Test strategies against historical data. Compare performance, drawdown, and win rates before deploying live.</p>
+    </div>
+    <div class="bento-card bento-6 highlight reveal">
+      <div class="icon-wrap">&#x1f4c8;</div>
+      <h3>4 Strategy Engines</h3>
+      <p>Reversal detection, level rejection, momentum entries, and conservative indicator signals. Each engine tunable via config params.</p>
+    </div>
+    <div class="bento-card bento-7 reveal reveal-delay-1">
+      <div class="icon-wrap">&#x2699;</div>
+      <h3>Setup Wizard</h3>
+      <p>Interactive CLI walks through exchange selection, API credentials, strategy pick, and risk params. Trading in under 5 minutes.</p>
+    </div>
+    <div class="bento-card bento-8 reveal reveal-delay-1">
+      <div class="icon-wrap">&#x1f50c;</div>
+      <h3>Unified Exchange API</h3>
+      <p>Same config format across all exchanges. Switch from Blofin to Bybit by changing one line. CCXT adapter handles the rest.</p>
+    </div>
+    <div class="bento-card bento-9 reveal reveal-delay-2">
+      <div class="icon-wrap">&#x1f4be;</div>
+      <h3>Local Database</h3>
+      <p>All trades, positions, and performance data stored in an encrypted local SQLite database. Optional passphrase encryption.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- EXCHANGES -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section id="exchanges" class="exchanges">
+  <div class="section-header reveal">
+    <span class="section-tag">Integrations</span>
+    <h2>Your exchange. Your choice.</h2>
+    <p>Connect to any of these exchanges with a single config change.</p>
+  </div>
+
+  <div class="exchange-row">
+    <div class="exchange-card reveal">
+      <div class="exchange-icon">BLO</div>
+      <span class="ex-name">Blofin</span>
+      <span class="ex-detail">Demo available</span>
+    </div>
+    <div class="exchange-card reveal reveal-delay-1">
+      <div class="exchange-icon">HL</div>
+      <span class="ex-name">Hyperliquid</span>
+      <span class="ex-detail">On-chain perps</span>
+    </div>
+    <div class="exchange-card reveal reveal-delay-2">
+      <div class="exchange-icon">BB</div>
+      <span class="ex-name">Bybit</span>
+      <span class="ex-detail">Testnet available</span>
+    </div>
+    <div class="exchange-card reveal reveal-delay-3">
+      <div class="exchange-icon">BN</div>
+      <span class="ex-name">Binance</span>
+      <span class="ex-detail">Futures</span>
+    </div>
+    <div class="exchange-card reveal reveal-delay-4">
+      <div class="exchange-icon">OKX</div>
+      <span class="ex-name">OKX</span>
+      <span class="ex-detail">Demo available</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- HOW IT WORKS -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section class="how-it-works">
+  <div class="section-header reveal">
+    <span class="section-tag">Setup</span>
+    <h2>Up and running in 3 steps.</h2>
+  </div>
+
+  <div class="steps-container">
+    <div class="step-row reveal">
+      <div class="step-number">1</div>
+      <div class="step-content">
+        <h3>Install</h3>
+        <p>Download the package, run <code>npm install</code>. Node.js 20+ is the only requirement. No Docker, no external services.</p>
+      </div>
+    </div>
+    <div class="step-row reveal reveal-delay-1">
+      <div class="step-number">2</div>
+      <div class="step-content">
+        <h3>Configure</h3>
+        <p>Run the setup wizard or edit <code>config.yaml</code> directly. Pick your exchange, paste your API keys, choose a strategy, set your risk limits.</p>
+      </div>
+    </div>
+    <div class="step-row reveal reveal-delay-2">
+      <div class="step-number">3</div>
+      <div class="step-content">
+        <h3>Trade</h3>
+        <p>Run <code>node pm-trade-module.mjs</code> and open the status page. Start in demo mode, validate your strategy, then flip to live when ready.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- PRICING -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section id="pricing" class="pricing">
+  <div class="section-header reveal">
+    <span class="section-tag">Pricing</span>
+    <h2>One payment. You own it.</h2>
+    <p>No monthly subscriptions. No profit sharing. No hidden fees.</p>
+  </div>
+
+  <div class="pricing-grid">
+    <!-- Base -->
+    <div class="price-card reveal">
+      <div class="price-tier">Base</div>
+      <div class="price-desc">Everything you need to get started.</div>
+      <div class="price-amount">
+        <span class="dollar">$97</span>
+        <span class="period">one-time</span>
+      </div>
+      <ul class="price-features">
+        <li><span class="ck">&#10003;</span> 2 exchanges</li>
+        <li><span class="ck">&#10003;</span> 3 trading pairs</li>
+        <li><span class="ck">&#10003;</span> All 4 strategy engines</li>
+        <li><span class="ck">&#10003;</span> Backtesting engine</li>
+        <li><span class="ck">&#10003;</span> Real-time status page</li>
+        <li><span class="ck">&#10003;</span> Setup wizard</li>
+        <li><span class="ck">&#10003;</span> Demo mode</li>
+        <li><span class="ck">&#10003;</span> Encrypted local database</li>
+      </ul>
+      <button onclick="buyNow('base', event)" class="btn-outline">Get Base</button>
+    </div>
+
+    <!-- Pro -->
+    <div class="price-card featured reveal reveal-delay-1">
+      <div class="badge-popular">MOST VALUE</div>
+      <div class="price-tier">Pro</div>
+      <div class="price-desc">Full power. No limits worth hitting.</div>
+      <div class="price-amount">
+        <span class="dollar">$297</span>
+        <span class="period">one-time</span>
+      </div>
+      <ul class="price-features">
+        <li><span class="ck">&#10003;</span> <strong>5 exchanges</strong></li>
+        <li><span class="ck">&#10003;</span> <strong>10 trading pairs</strong></li>
+        <li><span class="ck">&#10003;</span> All 4 strategy engines</li>
+        <li><span class="ck">&#10003;</span> Multi-strategy support</li>
+        <li><span class="ck">&#10003;</span> Backtesting engine</li>
+        <li><span class="ck">&#10003;</span> Portfolio tracking</li>
+        <li><span class="ck">&#10003;</span> VPN sidecar</li>
+        <li><span class="ck">&#10003;</span> Priority support</li>
+        <li><span class="ck">&#10003;</span> Everything in Base</li>
+      </ul>
+      <button onclick="buyNow('pro', event)" class="btn-primary">Get Pro</button>
+    </div>
+  </div>
+
+  <p class="pricing-note">Payment via crypto accepted. 300+ cryptocurrencies supported. No accounts required.</p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- FAQ -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<section id="faq" class="faq-section">
+  <div class="section-header reveal">
+    <span class="section-tag">FAQ</span>
+    <h2>Questions</h2>
+  </div>
+
+  <div class="faq-list">
+    <div class="faq-item reveal">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Do I need a server or VPS?
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">No. PM Trade Module runs on any machine with Node.js 20+ -- your laptop, a mini PC, a NAS, or a VPS if you prefer. There's no cloud component. It connects directly to your exchange's API.</div>
+    </div>
+
+    <div class="faq-item reveal reveal-delay-1">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Are my API keys safe?
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">Your API keys stay in your local config.yaml file and never leave your machine. There's no telemetry, no cloud sync, no phone-home. The bot connects directly from your IP to the exchange API.</div>
+    </div>
+
+    <div class="faq-item reveal reveal-delay-1">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Can I test without real money?
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">Yes. Every supported exchange has a sandbox/demo/testnet mode. Start with <code>sandbox: true</code> in your config (this is the default). Run your strategy risk-free, review performance, then flip to live when you're confident.</div>
+    </div>
+
+    <div class="faq-item reveal reveal-delay-2">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        What strategies are included?
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">Four built-in engines: <strong>reversal_180</strong> (trend reversal detection), <strong>dmc_level_rejection</strong> (key level bounce trading), <strong>money_z</strong> (momentum entries), and <strong>piggy_v1</strong> (conservative indicator signals). Each is configurable via params in your config file.</div>
+    </div>
+
+    <div class="faq-item reveal reveal-delay-2">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        How do I switch exchanges?
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">Change the <code>exchange.id</code> field in config.yaml and paste your new credentials. The CCXT adapter normalizes everything -- pair formats, order types, position tracking. One config change, same behavior.</div>
+    </div>
+
+    <div class="faq-item reveal reveal-delay-3">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        Is there a monthly fee?
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">No. One-time payment. You own the software. No subscriptions, no profit-sharing, no usage limits beyond your tier's exchange and pair counts.</div>
+    </div>
+
+    <div class="faq-item reveal reveal-delay-3">
+      <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+        What happens if my machine goes offline?
+        <span class="faq-arrow">&#9660;</span>
+      </div>
+      <div class="faq-a">Active stop losses and trailing stops are placed on the exchange itself, so they execute even if your machine disconnects. When the bot restarts, it reconciles positions with the exchange and picks up where it left off.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- FOOTER -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="footer-inner">
+    <span class="footer-brand">PM <span class="ft">Trade</span></span>
+    <span class="footer-company">A <strong>Permanently Mobile</strong> product</span>
+    <span class="footer-disclaimer">Trading involves risk. Past performance does not guarantee future results.</span>
+  </div>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- SCRIPTS -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<script>
+// Scroll reveal observer
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Nav background on scroll
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  if (window.scrollY > 80) {
+    nav.style.background = 'rgba(8, 12, 20, 0.92)';
+    nav.style.borderBottomColor = 'rgba(59, 130, 246, 0.12)';
+  } else {
+    nav.style.background = 'rgba(8, 12, 20, 0.75)';
+    nav.style.borderBottomColor = 'rgba(59, 130, 246, 0.08)';
+  }
+});
+
+// Payment integration (unchanged)
+async function buyNow(tier, e) {
+  const btn = e.target;
+  const originalText = btn.textContent;
+  btn.textContent = 'Loading...';
+  btn.disabled = true;
+
+  const prices = { base: 97, pro: 297 };
+  const names = { base: 'PM Trade Module - Base License', pro: 'PM Trade Module - Pro License' };
+
+  try {
+    const res = await fetch('https://api.nowpayments.io/v1/invoice', {
+      method: 'POST',
+      headers: {
+        'x-api-key': '3S1A2AT-P1R4X8X-PXRJ6FG-4E6KBG4',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        price_amount: prices[tier],
+        price_currency: 'usd',
+        order_id: 'pm-trade-module-' + tier + '-' + Date.now(),
+        order_description: names[tier],
+        success_url: window.location.origin + '/pm-trade-module/success.html',
+        cancel_url: window.location.href
+      })
+    });
+    const data = await res.json();
+    if (data.invoice_url) {
+      window.location.href = data.invoice_url;
+    } else {
+      throw new Error('No invoice URL returned');
+    }
+  } catch (err) {
+    btn.textContent = originalText;
+    btn.disabled = false;
+    alert('Payment system temporarily unavailable. Please try again in a moment.');
+  }
+}
+</script>
+
+</body>
+</html>

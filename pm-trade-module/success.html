@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Payment Confirmed -- PM Trade Module</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── RESET ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── NOISE TEXTURE ── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
+  }
+
+  /* ── BASE ── */
+  body {
+    background: #080c14;
+    color: #c8d2e0;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ── AMBIENT BACKGROUND ── */
+  .bg-grid {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 70% 50% at 50% 40%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 40%, black 20%, transparent 70%);
+  }
+
+  .bg-glow {
+    position: fixed;
+    top: -150px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, transparent 65%);
+    pointer-events: none; z-index: 0;
+    animation: drift 20s ease-in-out infinite;
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(40px); }
+  }
+
+  /* ── COLOR SYSTEM ── */
+  :root {
+    --blue-100: #dbeafe;
+    --blue-200: #93c5fd;
+    --blue-300: #60a5fa;
+    --blue-400: #3b82f6;
+    --blue-500: #2563eb;
+    --blue-600: #1d4ed8;
+    --cyan: #06b6d4;
+    --dark-50: #c8d2e0;
+    --dark-100: #94a3b8;
+    --dark-200: #64748b;
+    --dark-300: #475569;
+    --dark-400: #334155;
+    --dark-500: #1e293b;
+    --dark-700: #0f172a;
+    --dark-800: #0b1120;
+    --signal-green: #22c55e;
+  }
+
+  /* ── TYPOGRAPHY ── */
+  h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+  code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ── CONTAINER ── */
+  .container {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 580px;
+    padding: 48px 28px;
+    animation: page-in 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SUCCESS ICON ── */
+  .check-ring {
+    position: relative;
+    width: 88px; height: 88px;
+    margin: 0 auto 28px;
+  }
+  .check-ring::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.2), transparent 70%);
+    animation: ring-pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes ring-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 0.2; }
+  }
+  .check-circle {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue-500), var(--blue-600));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(37, 99, 235, 0.3), 0 0 0 1px rgba(59, 130, 246, 0.2);
+  }
+  .check-circle svg {
+    width: 40px; height: 40px;
+    stroke: #fff;
+    stroke-width: 3;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 50;
+    stroke-dashoffset: 50;
+    animation: draw-check 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+  }
+  @keyframes draw-check {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* ── HEADING ── */
+  h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+  }
+  .container > p {
+    color: var(--dark-100);
+    font-size: 16px;
+    line-height: 1.7;
+    margin-bottom: 24px;
+    max-width: 460px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ── CARD ── */
+  .card {
+    position: relative;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 16px;
+    padding: 28px;
+    text-align: left;
+    margin: 28px 0;
+    overflow: hidden;
+    animation: card-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+  }
+
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card h3 {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h3 .step-icon {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .card ol {
+    color: var(--dark-100);
+    padding-left: 22px;
+    line-height: 2.4;
+    margin: 0;
+    font-size: 14px;
+  }
+  .card ol li::marker { color: var(--blue-400); font-weight: 700; }
+
+  code {
+    background: rgba(59, 130, 246, 0.08);
+    color: var(--blue-300);
+    padding: 2px 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+
+  /* ── TIP BOX ── */
+  .tip {
+    position: relative;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.06), rgba(6, 182, 212, 0.03));
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: left;
+    margin: 24px 0;
+    animation: card-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+  }
+  .tip::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.25), transparent);
+  }
+  .tip-label {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--blue-300);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tip-label::before {
+    content: '';
+    width: 10px; height: 2px;
+    background: var(--blue-400);
+  }
+  .tip p {
+    color: var(--dark-100);
+    font-size: 14px;
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  /* ── BACK LINK ── */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 12px 28px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--dark-100);
+    border: 1px solid rgba(59, 130, 246, 0.1);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: card-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
+  }
+  .back-link:hover {
+    border-color: var(--blue-400);
+    color: var(--blue-300);
+    background: rgba(59, 130, 246, 0.04);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.1);
+    text-decoration: none;
+  }
+  .back-link .arrow {
+    transition: transform 0.3s;
+  }
+  .back-link:hover .arrow {
+    transform: translateX(-3px);
+  }
+
+  /* ── SUPPORT ── */
+  .support {
+    color: var(--dark-300);
+    font-size: 13px;
+    margin-top: 36px;
+    line-height: 1.8;
+    animation: card-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+  }
+  a { color: var(--blue-300); text-decoration: none; transition: color 0.2s; }
+  a:hover { color: var(--blue-200); }
+
+  /* ── CONFETTI PARTICLES ── */
+  .particle {
+    position: fixed;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 50;
+    animation: particle-fall linear forwards;
+  }
+  @keyframes particle-fall {
+    0% { opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+    100% { opacity: 0; transform: translateY(100vh) rotate(720deg) scale(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Ambient effects -->
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<div class="container">
+  <div class="check-ring">
+    <div class="check-circle">
+      <svg viewBox="0 0 24 24">
+        <polyline points="6 12 10 16 18 8"/>
+      </svg>
+    </div>
+  </div>
+
+  <h1>Payment confirmed.</h1>
+  <p>Your PM Trade Module license is being generated. You'll receive download instructions and your license key via email within 24 hours.</p>
+
+  <div class="card">
+    <h3><span class="step-icon">&#x1f680;</span> What happens next</h3>
+    <ol>
+      <li>You'll receive an email with your license key and download link</li>
+      <li>Download the package and run <code>npm install</code></li>
+      <li>Run <code>node setup-wizard.mjs</code> to configure your exchange and strategy</li>
+      <li>Enter your license key when prompted</li>
+      <li>Start in demo mode: <code>node pm-trade-module.mjs</code></li>
+      <li>Open the status page at <code>http://localhost:3200</code></li>
+    </ol>
+  </div>
+
+  <div class="tip">
+    <div class="tip-label">Pro tip</div>
+    <p>Start with <code>sandbox: true</code> in your config (this is the default). Run your strategy risk-free against real market data. When you're confident, flip to live with one config change.</p>
+  </div>
+
+  <a href="/pm-trade-module/" class="back-link"><span class="arrow">&larr;</span> Back to PM Trade Module</a>
+
+  <p class="support">Questions? Reach out at <a href="mailto:support@permanentlymobile.com">support@permanentlymobile.com</a><br>If you don't receive your download within 30 minutes, check spam or contact support.</p>
+</div>
+
+<script>
+// Celebration particles on load
+function spawnParticles() {
+  const colors = ['#3b82f6', '#60a5fa', '#06b6d4', '#2563eb', '#93c5fd', '#1d4ed8'];
+  for (let i = 0; i < 24; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.top = '-10px';
+    p.style.width = (4 + Math.random() * 6) + 'px';
+    p.style.height = p.style.width;
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.animationDuration = (2 + Math.random() * 3) + 's';
+    p.style.animationDelay = (Math.random() * 1.5) + 's';
+    p.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 5000);
+  }
+}
+setTimeout(spawnParticles, 300);
+</script>
+
+</body>
+</html>

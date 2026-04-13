@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Permanently Mobile - Products</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #08080a;
+    --surface: #111114;
+    --elevated: #18181c;
+    --border: #2a2a32;
+    --text: #e8e8ec;
+    --text-dim: #8a8a96;
+    --accent: #3b82f6;
+    --accent-light: #60a5fa;
+    --accent-glow: rgba(59, 130, 246, 0.08);
+    --font: 'Outfit', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .container {
+    max-width: 720px;
+    width: 100%;
+    text-align: center;
+  }
+  .brand {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 0.75rem;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 1.1rem;
+    margin-bottom: 3rem;
+  }
+  .products {
+    display: grid;
+    gap: 1.25rem;
+  }
+  .product-card {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem 2rem;
+    text-decoration: none;
+    color: var(--text);
+    text-align: left;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .product-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .product-card:hover {
+    border-color: var(--accent);
+    background: var(--elevated);
+    transform: translateY(-2px);
+  }
+  .product-card:hover::before { opacity: 1; }
+  .product-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+  }
+  .product-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent-light);
+    background: var(--accent-glow);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.6rem;
+  }
+  .product-desc {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .arrow {
+    position: absolute;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 1.25rem;
+    transition: all 0.25s ease;
+  }
+  .product-card:hover .arrow {
+    color: var(--accent);
+    transform: translateY(-50%) translateX(4px);
+  }
+  footer {
+    margin-top: 3rem;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+  @media (max-width: 480px) {
+    .product-card { padding: 1.25rem 1.5rem; }
+    .arrow { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="brand">Permanently Mobile</div>
+    <h1>Products</h1>
+    <p class="subtitle">Privacy-first tools you own outright. One payment, no subscriptions.</p>
+    <div class="products">
+      <a href="/pm-books/" class="product-card">
+        <div class="product-tag">BOOKKEEPING</div>
+        <div class="product-name">PM Books</div>
+        <p class="product-desc">AI-powered bookkeeping that sets itself up. Bank sync, receipt scanning, tax-ready reports.</p>
+        <span class="arrow">&rarr;</span>
+      </a>
+      <a href="/pm-trade-module/" class="product-card">
+        <div class="product-tag">TRADING</div>
+        <div class="product-name">PM Trade Module</div>
+        <p class="product-desc">Automated perpetual futures trading. Multi-exchange, real-time signals, full local control.</p>
+        <span class="arrow">&rarr;</span>
+      </a>
+      <a href="/pm-privacy-guard/" class="product-card">
+        <div class="product-tag">PRIVACY</div>
+        <div class="product-name">PM Privacy Guard</div>
+        <p class="product-desc">AI message privacy and classification. Scan, classify, and protect sensitive communications.</p>
+        <span class="arrow">&rarr;</span>
+      </a>
+    </div>
+    <footer>&copy; 2026 Permanently Mobile LLC</footer>
+  </div>
+</body>
+</html>
