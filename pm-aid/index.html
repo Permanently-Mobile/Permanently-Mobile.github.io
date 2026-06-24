@@ -917,7 +917,7 @@ footer {
       Catch the <span class="highlight">attacks against your AI agents</span> before they land.
     </h1>
     <p class="reveal reveal-delay-2 hero-sub">
-      PM AIDefense scans your code, dependencies, prompts, and MCP configs for prompt injection, supply-chain typosquats, secret exposure, and agent-runtime abuse. 74 JS-native security modules, running fully offline on your own machine.
+      PM AIDefense scans your code, dependencies, prompts, and MCP configs for prompt injection, supply-chain typosquats, secret exposure, and agent-runtime abuse. 74 JS-native security modules, running locally so you do not spend Codex, Claude, or OpenAI tokens just to inspect a repo.
     </p>
     <div class="reveal reveal-delay-3 hero-actions">
       <a href="#pricing" class="btn-accent">Get PM AIDefense</a>
@@ -970,8 +970,8 @@ footer {
         <div class="stat-label">Scan Profiles</div>
       </div>
       <div class="reveal reveal-delay-2">
-        <div class="stat-number">Offline</div>
-        <div class="stat-label">License</div>
+        <div class="stat-number">0</div>
+        <div class="stat-label">AI Tokens Burned</div>
       </div>
       <div class="reveal reveal-delay-3">
         <div class="stat-number">0</div>
@@ -988,7 +988,7 @@ footer {
   <div class="container">
     <div class="section-label reveal">Process</div>
     <div class="section-title reveal reveal-delay-1">One command.<br>Your whole agent, scanned.</div>
-    <div class="section-sub reveal reveal-delay-2">Point PM AIDefense at a repo or runtime. It runs locally, returns findings by severity, and exits with a CI-friendly status code. No cloud, no upload.</div>
+    <div class="section-sub reveal reveal-delay-2">Point PM AIDefense at a repo or runtime. It runs locally, returns findings by severity, and exits with a CI-friendly status code. No cloud, no upload, no model-token meter running.</div>
 
     <div class="hiw-layout">
       <div class="reveal reveal-delay-3 terminal" style="max-width: none;">
@@ -999,7 +999,7 @@ footer {
           <span class="terminal-bar-title">terminal</span>
         </div>
         <div class="terminal-body">
-          <span class="comment"># Fast, high-signal pass (great for CI)</span><br>
+          <span class="comment"># Fast, high-signal pass (great for CI, zero AI tokens)</span><br>
           <span class="cmd">$</span> npx pm-aid scan --profile quick ./agent
           <br><br>
           <span class="comment"># Full sweep, all 74 modules</span><br>
@@ -1136,7 +1136,7 @@ footer {
   <div class="container" style="text-align: center;">
     <div class="section-label reveal">Offline &amp; Owned</div>
     <div class="section-title reveal reveal-delay-1" style="max-width: none;">Runs offline. Owned outright.</div>
-    <div class="section-sub reveal reveal-delay-2" style="max-width: 560px; margin: 0 auto;">No phone-home, no telemetry, no subscription. Your code never leaves the machine it runs on.</div>
+    <div class="section-sub reveal reveal-delay-2" style="max-width: 620px; margin: 0 auto;">No phone-home, no telemetry, no subscription, no repo dump into a model window. Your code stays local and your AI token budget stays intact.</div>
 
     <div class="audit-grid" style="text-align: left;">
       <div class="audit-card reveal reveal-delay-1">
@@ -1146,6 +1146,10 @@ footer {
       <div class="audit-card reveal reveal-delay-2">
         <h3>Zero data retention</h3>
         <p>PM AIDefense sends nothing anywhere. No code, no findings, no telemetry leaves your environment &mdash; not to us, not to anyone.</p>
+      </div>
+      <div class="audit-card reveal reveal-delay-3">
+        <h3>Token-safe repo scanning</h3>
+        <p>PM AIDefense uses deterministic local modules for repo inspection, so you are not burning Codex, Claude, or OpenAI context on first-pass security checks.</p>
       </div>
       <div class="audit-card reveal reveal-delay-3">
         <h3>Local findings DB</h3>
@@ -1182,6 +1186,7 @@ footer {
           <li>Basic-safe quick and baseline-free profiles</li>
           <li>Offline ED25519 license</li>
           <li>CLI + local dashboard</li>
+          <li>No AI token usage for repo scans</li>
         </ul>
         <button onclick="buyNow(event,'pm-aid-basic')" class="btn-buy btn-buy-outline">Get Basic</button>
       </div>
@@ -1200,6 +1205,7 @@ footer {
           <li>Localhost and local project scanning</li>
           <li>PM Privacy Guard included</li>
           <li>One-time ownership</li>
+          <li>No AI token usage for repo scans</li>
         </ul>
         <button onclick="buyNow(event,'pm-aid-full')" class="btn-buy btn-buy-accent">Get Full</button>
       </div>
@@ -1216,6 +1222,7 @@ footer {
           <li>Everything in <strong>Full</strong></li>
           <li>Commercial-use license rights</li>
           <li>Community suggestions and updates</li>
+          <li>No AI token usage for repo scans</li>
           <li>PM Privacy Guard included</li>
           <li>No recurring monthly term</li>
         </ul>
