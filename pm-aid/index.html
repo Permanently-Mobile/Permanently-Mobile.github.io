@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="pm-payments-worker" content="https://pm-payments.nashja2011.workers.dev">
 <title>PM AIDefense -- AI Agent Defense Scanner</title>
 <meta name="description" content="PM AIDefense is a self-hosted AI-agent defense scanner. 74 JS-native security modules scan code, dependencies, prompts, MCP configs, and agent runtimes for prompt injection, supply-chain typosquats, secret exposure, and more. Runs fully offline.">
 
@@ -894,7 +895,7 @@ footer {
   <div class="nav-inner">
     <a href="#" class="nav-brand">
       <div class="nav-brand-icon">AID</div>
-      <span class="nav-brand-text">PM AID</span>
+      <span class="nav-brand-text">PM AIDefense</span>
     </a>
     <ul class="nav-links">
       <li><a href="#how-it-works">Process</a></li>
@@ -916,7 +917,7 @@ footer {
       Catch the <span class="highlight">attacks against your AI agents</span> before they land.
     </h1>
     <p class="reveal reveal-delay-2 hero-sub">
-      PM AID scans your code, dependencies, prompts, and MCP configs for prompt injection, supply-chain typosquats, secret exposure, and agent-runtime abuse. 74 JS-native security modules, running fully offline on your own machine.
+      PM AIDefense scans your code, dependencies, prompts, and MCP configs for prompt injection, supply-chain typosquats, secret exposure, and agent-runtime abuse. 74 JS-native security modules, running fully offline on your own machine.
     </p>
     <div class="reveal reveal-delay-3 hero-actions">
       <a href="#pricing" class="btn-accent">Get PM AIDefense</a>
@@ -987,7 +988,7 @@ footer {
   <div class="container">
     <div class="section-label reveal">Process</div>
     <div class="section-title reveal reveal-delay-1">One command.<br>Your whole agent, scanned.</div>
-    <div class="section-sub reveal reveal-delay-2">Point PM AID at a repo or runtime. It runs locally, returns findings by severity, and exits with a CI-friendly status code. No cloud, no upload.</div>
+    <div class="section-sub reveal reveal-delay-2">Point PM AIDefense at a repo or runtime. It runs locally, returns findings by severity, and exits with a CI-friendly status code. No cloud, no upload.</div>
 
     <div class="hiw-layout">
       <div class="reveal reveal-delay-3 terminal" style="max-width: none;">
@@ -1235,29 +1236,29 @@ footer {
     <div class="section-title reveal reveal-delay-1" style="max-width: none;">Common questions.</div>
 
     <div class="faq-list" style="text-align: left;">
-      <div class="faq-item reveal" onclick="this.classList.toggle('open')">
+      <div class="faq-item reveal">
         <div class="faq-q">What does PM AIDefense scan? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">Codebases, dependencies, prompts, MCP configs, and agent runtimes. 74 JS-native modules look for prompt injection, context exploits, secret exposure, supply-chain and typosquat attacks, vault access, API abuse, tool-output poisoning, and more &mdash; the surfaces an AI agent actually gets attacked on.</div>
+        <div class="faq-a">Codebases, dependencies, prompt files, MCP configs, agent tools, local dashboards, runtime settings, and repo metadata. The scanner looks for prompt injection, tool-output poisoning, exposed secrets, supply-chain typosquats, unsafe MCP permissions, localhost exposure, OSINT leaks, refusal-bait payloads, and other AI-agent attack paths.</div>
       </div>
-      <div class="faq-item reveal reveal-delay-1" onclick="this.classList.toggle('open')">
+      <div class="faq-item reveal reveal-delay-1">
+        <div class="faq-q">What is the difference between Basic, Full, and Full Pro? <span class="faq-arrow">&#9660;</span></div>
+        <div class="faq-a"><strong>Basic</strong> unlocks full findings for the 59 Basic-safe modules. <strong>Full</strong> unlocks all 74 modules, localhost and local project scanning, premium modules, and includes PM Privacy Guard. <strong>Full Pro</strong> adds commercial-use rights for client work plus the same full module set and Privacy Guard bundle.</div>
+      </div>
+      <div class="faq-item reveal reveal-delay-2">
+        <div class="faq-q">What do free scans show? <span class="faq-arrow">&#9660;</span></div>
+        <div class="faq-a">Free scans run the shipped scanner stack as summary-only proof. You can see whether issues were found and how severe the result is. Paid licenses unlock detailed findings, file locations, remediation guidance, exports, and the local dashboard.</div>
+      </div>
+      <div class="faq-item reveal reveal-delay-3">
         <div class="faq-q">Does it run offline? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">Yes, fully. PM AID is a self-hosted Node.js tool (Node &gt;=20) that runs entirely on your machine. No cloud, no activation server, no internet required to scan. CLI plus a local dashboard.</div>
+        <div class="faq-a">Yes. PM AIDefense is a self-hosted Node.js tool that runs on your machine. Scans do not require uploading your repo, prompts, configs, or findings. Licenses validate locally with an offline ED25519 signature.</div>
       </div>
-      <div class="faq-item reveal reveal-delay-2" onclick="this.classList.toggle('open')">
-        <div class="faq-q">How does the license work? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">Licenses are verified locally with an offline ED25519 signature. There's no phone-home and no activation server &mdash; the license validates on your machine, so PM AIDefense works even with the network fully cut.</div>
-      </div>
-      <div class="faq-item reveal reveal-delay-3" onclick="this.classList.toggle('open')">
+      <div class="faq-item reveal reveal-delay-4">
         <div class="faq-q">What are the scan profiles? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">Three. <strong>quick</strong> runs ~15 high-signal modules at CI speed. <strong>osint-light</strong> adds lightweight reconnaissance and exposure checks. <strong>half-deep</strong> runs all 74 modules for releases and audits.</div>
+        <div class="faq-a"><strong>quick</strong> runs the fastest high-signal checks for day-to-day use and CI. <strong>osint-light</strong> adds lightweight exposure checks. <strong>half-deep</strong> runs the complete 74-module suite for release checks and deeper audits.</div>
       </div>
-      <div class="faq-item reveal reveal-delay-4" onclick="this.classList.toggle('open')">
-        <div class="faq-q">What is refusal-bait resistance? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">Some malware now embeds weapons, CBRN, or jailbreak text specifically to trip an AI scanner's safety refusal so it won't analyze the file. PM AIDefense detects that bait and quarantines it before analysis, so it reads the malware's real mechanics instead of choking on the decoy. A scanner that can't be gagged.</div>
-      </div>
-      <div class="faq-item reveal reveal-delay-5" onclick="this.classList.toggle('open')">
-        <div class="faq-q">Does it send my code anywhere? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">No. Zero data retention. PM AIDefense sends nothing anywhere &mdash; not your code, not your findings, not telemetry. Results stay in a local SQLite database that you own and control.</div>
+      <div class="faq-item reveal reveal-delay-5">
+        <div class="faq-q">Does PM AIDefense send my code anywhere? <span class="faq-arrow">&#9660;</span></div>
+        <div class="faq-a">No. PM AIDefense sends no code, prompts, configs, findings, or telemetry to Permanently Mobile. Results stay local in your project output, local database, and browser dashboard.</div>
       </div>
     </div>
   </div>

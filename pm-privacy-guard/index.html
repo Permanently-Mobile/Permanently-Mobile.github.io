@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="pm-payments-worker" content="https://pm-payments.nashja2011.workers.dev">
 <title>PM Privacy Guard -- AI Message Privacy & Classification</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1171,29 +1172,29 @@ footer {
     <div class="section-title reveal reveal-delay-1" style="max-width: none;">Common questions.</div>
 
     <div class="faq-list" style="text-align: left;">
-      <div class="faq-item reveal" onclick="this.classList.toggle('open')">
-        <div class="faq-q">What AI providers does PM Privacy Guard work with? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">Any of them. PM Privacy Guard is provider-agnostic middleware. It classifies and sanitizes messages before they reach any provider -- Claude, OpenAI, Venice, Ollama, or your own models. You configure which providers are "privacy" (zero retention) and which are "standard."</div>
+      <div class="faq-item reveal">
+        <div class="faq-q">What does PM Privacy Guard protect? <span class="faq-arrow">&#9660;</span></div>
+        <div class="faq-a">It classifies and sanitizes sensitive AI messages before they leave your system. It detects PII, financial data, medical content, legal content, family or contact references, credentials, keys, and custom patterns you define.</div>
       </div>
-      <div class="faq-item reveal reveal-delay-1" onclick="this.classList.toggle('open')">
+      <div class="faq-item reveal reveal-delay-1">
+        <div class="faq-q">How does tokenization work? <span class="faq-arrow">&#9660;</span></div>
+        <div class="faq-a">Sensitive values are replaced with safe placeholders before a prompt reaches an AI provider. Reversible token maps stay in memory only, so your app can restore the original values locally without storing the raw sensitive text in logs or sending it upstream.</div>
+      </div>
+      <div class="faq-item reveal reveal-delay-2">
+        <div class="faq-q">What AI providers does it work with? <span class="faq-arrow">&#9660;</span></div>
+        <div class="faq-a">Any provider. PM Privacy Guard sits in front of Claude, OpenAI, Venice, Ollama, local models, or your own router. It returns a routing decision, sanitized prompt, sensitivity score, and audit metadata so your app can choose the safe destination.</div>
+      </div>
+      <div class="faq-item reveal reveal-delay-3">
         <div class="faq-q">Does PM Privacy Guard store my messages? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">No. The audit log stores SHA-256 hashes of messages, sensitivity scores, and routing decisions -- never the actual message content. Token maps (for reversible tokenization) are held in memory only and never persisted to disk.</div>
+        <div class="faq-a">No raw message content is persisted. Audit logs store hashes, categories, sensitivity scores, and routing decisions. Token maps are held in memory only unless you explicitly build your own persistence around them.</div>
       </div>
-      <div class="faq-item reveal reveal-delay-2" onclick="this.classList.toggle('open')">
+      <div class="faq-item reveal reveal-delay-4">
         <div class="faq-q">Is this a cloud service? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">No. PM Privacy Guard is a self-hosted Node.js module that runs on your machine. Your data never leaves your infrastructure unless you choose to send it to an AI provider -- and PM Privacy Guard helps you control exactly what gets sent.</div>
+        <div class="faq-a">No. It is a self-hosted Node.js privacy layer. It runs on your machine or server. Your content only leaves your infrastructure when your own app decides to send a sanitized prompt to a provider.</div>
       </div>
-      <div class="faq-item reveal reveal-delay-3" onclick="this.classList.toggle('open')">
+      <div class="faq-item reveal reveal-delay-5">
         <div class="faq-q">Is there a monthly fee? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">No. One-time payment. You own the software. No subscriptions. Every feature is included &mdash; there is only one tier.</div>
-      </div>
-      <div class="faq-item reveal reveal-delay-4" onclick="this.classList.toggle('open')">
-        <div class="faq-q">Can I add custom detection patterns? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">Yes. Pass custom regex patterns per category in your config. Industry-specific terms, internal identifiers, proprietary data formats -- whatever your business needs to detect.</div>
-      </div>
-      <div class="faq-item reveal reveal-delay-5" onclick="this.classList.toggle('open')">
-        <div class="faq-q">What about HIPAA / SOC2 / GDPR compliance? <span class="faq-arrow">&#9660;</span></div>
-        <div class="faq-a">PM Privacy Guard provides the technical controls: PII detection, data sanitization, audit trails, and routing enforcement. These are building blocks for compliance -- but compliance also requires organizational policies, training, and sometimes third-party certification that are outside the scope of any software tool.</div>
+        <div class="faq-a">No. PM Privacy Guard is a one-time $79 lifetime license. Every Privacy Guard feature is included in that tier.</div>
       </div>
     </div>
   </div>
