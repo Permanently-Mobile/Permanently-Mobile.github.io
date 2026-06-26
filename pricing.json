@@ -1,0 +1,38 @@
+{
+  "company": "Permanently Mobile LLC",
+  "updated": "2026-06-26",
+  "currency": "USD",
+  "pricingModel": "one-time licenses, no subscriptions",
+  "tiers": [
+    {
+      "product": "PM AIDefense",
+      "tier": "Free",
+      "price": 0,
+      "description": "Complete 74-module shipped stack as summary-only proof. No detailed findings, locations, remediation, reports, or export."
+    },
+    {
+      "product": "PM AIDefense",
+      "tier": "Basic",
+      "price": 147,
+      "description": "59 Basic modules with detailed findings, locations, remediation, and local reporting."
+    },
+    {
+      "product": "PM AIDefense",
+      "tier": "Full",
+      "price": 197,
+      "description": "All 74 shipped modules, including 15 Full-only premium modules. Includes PM Privacy Guard."
+    },
+    {
+      "product": "PM AIDefense",
+      "tier": "Full Pro",
+      "price": 595,
+      "description": "All Full capabilities plus commercial-use rights."
+    },
+    {
+      "product": "PM Privacy Guard",
+      "tier": "Standard",
+      "price": 79,
+      "description": "Standalone local privacy classifier, sanitizer, tokenizer, and routing layer."
+    }
+  ]
+}

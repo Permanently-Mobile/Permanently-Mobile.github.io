@@ -1,0 +1,19 @@
+{
+  "company": "Permanently Mobile LLC",
+  "website": "https://permanentlymobile.com",
+  "updated": "2026-06-26",
+  "ownershipModel": "One-time licenses for local-first software.",
+  "dataHandling": {
+    "pmAid": "Local scans. No code upload. No LLM token spend for repository inspection.",
+    "pmPrivacyGuard": "Classifies, sanitizes, tokenizes, and routes messages without storing message content."
+  },
+  "permissions": {
+    "aiTrain": "no",
+    "searchRetrievalCitation": "permitted with source attribution"
+  },
+  "limitations": [
+    "No fake MCP or OpenAPI contract is published.",
+    "Paid findings and remediation detail remain behind purchase.",
+    "Public PM AID package truth is @permanentlymobile/pm-aid@1.1.0 with 74 shipped modules."
+  ]
+}

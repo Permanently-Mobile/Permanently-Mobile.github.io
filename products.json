@@ -1,0 +1,73 @@
+{
+  "company": "Permanently Mobile LLC",
+  "website": "https://permanentlymobile.com",
+  "updated": "2026-06-26",
+  "products": [
+    {
+      "id": "pm-aid",
+      "name": "PM AIDefense",
+      "url": "https://permanentlymobile.com/pm-aid/",
+      "type": "Local AI-agent security scanner",
+      "package": "@permanentlymobile/pm-aid",
+      "publicVersion": "1.1.0",
+      "publicModuleCount": 74,
+      "basicModuleCount": 59,
+      "premiumModuleCount": 15,
+      "install": "npx pm-aid scan --profile quick ./repo",
+      "capabilities": [
+        "prompt injection detection",
+        "MCP configuration audit",
+        "dependency and supply-chain checks",
+        "secret exposure detection",
+        "agent-runtime abuse checks",
+        "local reports",
+        "CI-friendly exit codes"
+      ],
+      "dataHandling": "Runs locally, does not upload code, and does not spend LLM tokens to inspect a repository.",
+      "bestFor": [
+        "scanning AI-agent repositories before merge",
+        "checking MCP tools and configs",
+        "auditing prompt and tool-output attack surfaces",
+        "proving local AI security posture"
+      ],
+      "pricing": [
+        "Free summary-only proof",
+        "Basic $147 one-time",
+        "Full $197 one-time",
+        "Full Pro $595 one-time"
+      ]
+    },
+    {
+      "id": "pm-privacy-guard",
+      "name": "PM Privacy Guard",
+      "url": "https://permanentlymobile.com/pm-privacy-guard/",
+      "type": "Local AI message privacy classifier and sanitizer",
+      "capabilities": [
+        "classify sensitive content",
+        "redact",
+        "mask",
+        "tokenize",
+        "route",
+        "audit routing decisions with hashes"
+      ],
+      "sensitiveCategories": [
+        "PII",
+        "financial data",
+        "crypto data",
+        "medical content",
+        "legal content",
+        "personal names and relationships"
+      ],
+      "dataHandling": "No message content is stored.",
+      "pricing": [
+        "$79 one-time standalone",
+        "included with PM AIDefense Full and Full Pro"
+      ],
+      "bestFor": [
+        "protecting sensitive prompts before sending them to external LLM providers",
+        "routing private messages to privacy-first providers",
+        "preserving local control over family, financial, medical, legal, and business data"
+      ]
+    }
+  ]
+}
